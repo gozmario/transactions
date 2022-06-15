@@ -1,0 +1,40 @@
+version: '3.7'
+
+services:
+    transactions_database:
+      container_name: transactions_db
+      image: postgres:latest
+      environment:
+          - POSTGRES_USER=admin
+          - POSTGRES_PASSWORD=admin1234
+          - POSTGRES_DB=transactions_admin_db
+      ports: 
+          - "5432:5432"
+      restart: always
+      volumes: 
+          - database-data:/var/lib/postgresql/data/
+
+    transactions_api:
+      container_name: transactions_api
+      build: ./transactions-api
+      image: sprintform/transactions-api
+      ports:
+        - "4200:4200"
+      depends_on:
+        - "transactions_database"
+
+    veconex-dashboard:
+      container_name: transactions_dashboard
+      build: ./transactions-dashboard
+      image: sprintform/transactions-dashboard
+      ports:
+        - "3000:3000"
+      depends_on:
+        - "transactions_api"
+
+volumes:
+    database-data:
+
+networks:
+  default:
+    name: transactions
