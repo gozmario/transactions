@@ -1,7 +1,7 @@
 import DialogTitle from "@mui/material/DialogTitle";
 import Dialog from "@mui/material/Dialog";
 import { useRecoilState } from "recoil";
-import { dialogAtom } from "../../services/dialog";
+import { defaultDialogValues, dialogAtom } from "../../services/dialog";
 import {
   Button,
   DialogContent,
@@ -14,50 +14,32 @@ import {
 import {
   CREATE_TRANSACTION,
   GET_TRANSACTION,
-  Transaction,
   TransactionCategory,
   UPDATE_TRANSACTION,
 } from "../../services";
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { DesktopDatePicker } from "@mui/x-date-pickers";
 import { useMutation } from "@apollo/client";
 import { LoadingButton } from "@mui/lab";
 
-type CreateTransaction = Omit<Transaction, "id">;
-
-const defaultTransaction: CreateTransaction = {
-  summary: "",
-  category: TransactionCategory.housing,
-  sum: 0,
-  currency: "HUF",
-  paid: new Date(),
-};
-
-const defaultDialogValues = {
-  open: false,
-  editMode: false,
-  dialogData: undefined,
-};
-
 export function FormDialog() {
   const [dialog, setDialog] = useRecoilState(dialogAtom);
 
-  const [transaction, setTransaction] =
-    useState<CreateTransaction>(defaultTransaction);
+  const transaction = useMemo(() => dialog.dialogData, [dialog.dialogData]);
 
-  // TODO: replace this with an atom
-  useEffect(() => {
-    if (!!dialog.dialogData && dialog.editMode) {
-      setTransaction(dialog.dialogData);
-    } else {
-      setTransaction(defaultTransaction);
-    }
-  }, [dialog]);
+  const setTransaction = (key: string, value: unknown) => {
+    setDialog({
+      ...dialog,
+      dialogData: {
+        ...transaction,
+        [key]: value,
+      },
+    });
+  };
 
   const [createMutation, { loading }] = useMutation(CREATE_TRANSACTION, {
     refetchQueries: [GET_TRANSACTION],
     onCompleted: () => {
-      setTransaction(defaultTransaction);
       setDialog(defaultDialogValues);
     },
   });
@@ -67,7 +49,6 @@ export function FormDialog() {
     {
       refetchQueries: [GET_TRANSACTION],
       onCompleted: () => {
-        setTransaction(defaultTransaction);
         setDialog(defaultDialogValues);
       },
     }
@@ -112,12 +93,7 @@ export function FormDialog() {
               defaultValue={TransactionCategory.housing}
               value={transaction.category}
               label="Tranzakciós kategória"
-              onChange={(e) =>
-                setTransaction((prev) => ({
-                  ...prev,
-                  category: e.target.value as TransactionCategory,
-                }))
-              }
+              onChange={(e) => setTransaction("category", e.target.value)}
             >
               {Object.values(TransactionCategory).map((v, idx) => (
                 <MenuItem key={v + idx} value={v}>
@@ -132,12 +108,7 @@ export function FormDialog() {
               size="small"
               placeholder="leírás..."
               value={transaction.summary}
-              onChange={(e) =>
-                setTransaction((prev) => ({
-                  ...prev,
-                  summary: e.target.value,
-                }))
-              }
+              onChange={(e) => setTransaction("summary", e.target.value)}
             />
           </Stack>
           <Stack spacing={1}>
@@ -149,10 +120,7 @@ export function FormDialog() {
               inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
               value={transaction.sum}
               onChange={(e) =>
-                setTransaction((prev) => ({
-                  ...prev,
-                  sum: parseInt(e.target.value),
-                }))
+                setTransaction("sum", parseInt(e.target.value, 10))
               }
             />
           </Stack>
@@ -165,12 +133,7 @@ export function FormDialog() {
               defaultValue={TransactionCategory.housing}
               value={transaction.currency}
               label="Valuta"
-              onChange={(e) =>
-                setTransaction((prev) => ({
-                  ...prev,
-                  currency: e.target.value,
-                }))
-              }
+              onChange={(e) => setTransaction("currency", e.target.value)}
             >
               <MenuItem value="HUF">HUF</MenuItem>
               <MenuItem value="EUR">EUR</MenuItem>
@@ -182,9 +145,7 @@ export function FormDialog() {
                 label="Dátum"
                 inputFormat="MM/dd/yyyy"
                 value={transaction.paid}
-                onChange={(paid) =>
-                  setTransaction((prev) => ({ ...prev, paid }))
-                }
+                onChange={(paid) => setTransaction("paid", paid)}
                 renderInput={(params) => <TextField {...params} />}
               />
             </Stack>

@@ -1,7 +1,6 @@
 import {
   Box,
   IconButton,
-  LinearProgress,
   List,
   ListItem,
   ListItemIcon,
@@ -12,27 +11,23 @@ import {
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import {
-  GetTransactionData,
   GET_TRANSACTION,
-  mapFilterFoQuery,
   REMOVE_TRANSACTION,
   Transaction,
-  transactionFilterAtom,
 } from "../../services";
-import { useRecoilValue, useSetRecoilState } from "recoil";
-import { useMutation, useQuery } from "@apollo/client";
+import { useSetRecoilState } from "recoil";
+import { useMutation } from "@apollo/client";
 import { DateTime } from "luxon";
 import { dialogAtom } from "../../services/dialog";
 import { mapCategoryToIcon } from "../../utils";
+import { Fragment } from "react";
 
-export function TransactionList() {
-  const filter = useRecoilValue(transactionFilterAtom);
+interface TransactionListProps {
+  data?: Transaction[];
+}
+export function TransactionList({ data }: TransactionListProps) {
   const setDialog = useSetRecoilState(dialogAtom);
-  const { data, loading } = useQuery<GetTransactionData>(GET_TRANSACTION, {
-    variables: {
-      filterTransactionInput: mapFilterFoQuery(filter),
-    },
-  });
+
   const [removeMutation] = useMutation(REMOVE_TRANSACTION, {
     refetchQueries: [GET_TRANSACTION],
     onCompleted: () => {},
@@ -49,23 +44,17 @@ export function TransactionList() {
       dialogData: transaction,
     });
   };
-  if (loading) {
-    return (
-      <Box sx={{ width: "100%" }}>
-        <LinearProgress />
-      </Box>
-    );
-  }
-  if (!data?.findAlltransaction || !data?.findAlltransaction.length) {
+
+  if (!data || !data.length) {
     return (
       <Box sx={{ width: "100%", padding: 2 }}>
-        <Typography>Üres lista</Typography>
+        <Typography>Nem található tranzakció</Typography>
       </Box>
     );
   }
   return (
     <List>
-      {data.findAlltransaction.map((item) => (
+      {data.map((item) => (
         <ListItem
           key={item.id}
           secondaryAction={
