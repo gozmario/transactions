@@ -20,6 +20,7 @@ import {
 function App() {
   const filter = useRecoilValue(transactionFilterAtom);
   const { data, loading } = useQuery<GetTransactionData>(GET_TRANSACTION, {
+    fetchPolicy: "network-only",
     variables: {
       filterTransactionInput: mapFilterFoQuery(filter),
     },
